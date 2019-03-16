@@ -266,11 +266,18 @@ void reshade::runtime::load_effect(const std::filesystem::path &path, size_t &ou
 			shader_model = 40;
 		else if (_renderer_id < 0xb000)
 			shader_model = 41;
-		else
+		else if (_renderer_id < 0xc000)
 			shader_model = 50;
+		else
+			shader_model = 60;
 
-		const reshadefx::codegen::backend language =
-			_renderer_id & 0x10000 ? reshadefx::codegen::backend::glsl : reshadefx::codegen::backend::hlsl;
+		reshadefx::codegen::backend language;
+		if ((_renderer_id & 0xF0000) == 0)
+			language = reshadefx::codegen::backend::hlsl;
+		else if (_renderer_id < 0x20000)
+			language = reshadefx::codegen::backend::glsl;
+		else // Vulkan uses SPIR-V input
+			language = reshadefx::codegen::backend::spirv;
 
 		// Compile the pre-processed source code (try the compile even if the preprocessor step failed to get additional error information)
 		if (!parser.parse(std::move(source_code), language, shader_model, true, _performance_mode, effect.module))
